@@ -1,0 +1,11 @@
+flask
+flask-cors
+flask-dotenv
+opensearch-py
+tenacity
+pybreaker
+pytest
+flasgger
+dotenv
+
+
