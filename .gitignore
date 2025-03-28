@@ -1,0 +1,5 @@
+# Ignore the virtual environment
+zdg_env/
+
+# Ignore environment variables file
+.env
