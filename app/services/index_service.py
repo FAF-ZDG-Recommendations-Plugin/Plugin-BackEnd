@@ -84,8 +84,15 @@ def index_article(post):
         return {"error": "Invalid date format, expected 'YYYY-MM-DD HH:MM:SS'"}
 
     # Check if the post is already indexed
-    if post_already_indexed(post["id"]):
+    if post_already_indexed(post["id"]) and post["update"] == "false":
+        # If the post is already indexed and not marked for update, skip indexing  
         return {"message": "Post already indexed"}
+    elif post["update"] == "true":
+        # If the post is marked for update, update the existing document
+        post["embedding"] = model.encode(post["content"]).tolist()
+        res = client.update(index=Config.INDEX_NAME, id=post["id"], body={"doc": post}, refresh=True)
+        return {"message": "Post updated successfully", "opensearch_response": res}
+
 
     # Generate embedding
     post["embedding"] = model.encode(post["content"]).tolist()
