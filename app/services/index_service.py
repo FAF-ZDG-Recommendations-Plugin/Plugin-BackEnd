@@ -82,22 +82,35 @@ def index_article(post):
         post["post_date"] = datetime.strptime(post["post_date"], "%Y-%m-%d %H:%M:%S").isoformat()
     except ValueError:
         return {"error": "Invalid date format, expected 'YYYY-MM-DD HH:MM:SS'"}
+    
+    post_to_index = {
+        "ID": post["id"],
+        "title": post["title"],
+        "guid": post["guid"],
+        "post_date": post["post_date"],
+        "embedding": model.encode(post["content"]).tolist()
+    }
+
 
     # Check if the post is already indexed
     if post_already_indexed(post["id"]) and post["update"] == "false":
-        # If the post is already indexed and not marked for update, skip indexing  
         return {"message": "Post already indexed"}
+
     elif post["update"] == "true":
-        # If the post is marked for update, update the existing document
-        post["embedding"] = model.encode(post["content"]).tolist()
-        res = client.update(index=Config.INDEX_NAME, id=post["id"], body={"doc": post}, refresh=True)
-        return {"message": "Post updated successfully", "opensearch_response": res}
+        # Step 1: Delete existing document
+        try:
+            client.delete(index=Config.INDEX_NAME, id=post["id"])
+            print(f"Deleted post {post['id']} from index")
+        except Exception as e:
+            print(f"Warning: Post {post['id']} not found or already deleted. Error: {e}")
 
+        # Step 3: Re-index the post
+        res = client.index(index=Config.INDEX_NAME, id=post["id"], body=post_to_index, refresh=True)
+        
+        return {"message": "Post re-indexed successfully", "opensearch_response": res}
 
-    # Generate embedding
-    post["embedding"] = model.encode(post["content"]).tolist()
 
     # Index into OpenSearch
-    res = client.index(index=Config.INDEX_NAME, id=post["id"], body=post, refresh=True)
+    res = client.index(index=Config.INDEX_NAME, id=post["id"], body=post_to_index, refresh=True)
 
     return {"message": "Post indexed successfully", "opensearch_response": res}
