@@ -14,7 +14,7 @@
 ## **🛠️ Setup & Installation**
 ### **1️⃣ Clone the Repository**  
 ```bash
-git clone https://github.com/your-username/your-repo.git
+git clone https://github.com/FAF-ZDG-Recommendations-Plugin/Plugin-BackEnd.git
 cd your-repo
 ```
 
