@@ -2,10 +2,12 @@ from flask import Flask
 from config.settings import Config
 from app.routes.recommend_routes import recommend_bp
 from app.routes.index_routes import index_bp
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for all routes
 
     # Register Blueprints
     app.register_blueprint(recommend_bp, url_prefix='/api')

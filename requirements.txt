@@ -7,5 +7,6 @@ pybreaker
 pytest
 flasgger
 dotenv
+flask-cors
 
 
