@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 from opensearchpy import OpenSearch
 from flask import jsonify
 from config.settings import Config
+import numpy as np
 
 print("Loading model...")
 model_name = "all-MiniLM-L6-v2"
@@ -38,7 +39,7 @@ def recommend_articles(data):
 
     # Start building query
     query_body = {
-        "size": data["top_k"]*5,
+        "size": data["top_k"]*10,
         "query": {
             "bool": {
                 "must": [],
@@ -53,11 +54,13 @@ def recommend_articles(data):
     if "mandatory_kw" in data and isinstance(data["mandatory_kw"], list) and data["mandatory_kw"]:
         keyword_conditions = [{"match": {"content": keyword}} for keyword in data["mandatory_kw"]]
         query_body["query"]["bool"]["must"].extend(keyword_conditions)  # Ensures all must match
+    
 
+    
     # If optional keywords are provided, they should boost results but not remove them
     if "optional_kw" in data and isinstance(data["optional_kw"], list) and data["optional_kw"]:
-        keyword_conditions = [{"match": {"content": keyword}} for keyword in data["optional_kw"]]
-        query_body["query"]["bool"]["should"].extend(keyword_conditions)  # Adds results if matched
+        keyword_conditions = [{"match": {"content": {"query": keyword, "fuzziness": "AUTO"}}} for keyword in data["optional_kw"]]
+        query_body["query"]["bool"]["should"].extend(keyword_conditions)
 
     # Add a date range filter if specified
     date_filter = {"range": {"post_date": {}}}
@@ -106,8 +109,9 @@ def recommend_articles(data):
                 ]
             }
         },
-        "_source": ["ID", "title", "guid", "post_date"]
+        "_source": ["ID", "title", "guid", "post_date", "embedding"]
     }
+    
 
     try:
         # Second search: Perform semantic similarity search within keyword-matching articles
@@ -118,12 +122,26 @@ def recommend_articles(data):
     # Process final results
     results = []
     for hit in response.get("hits", {}).get("hits", []):
+        article_embedding = hit["_source"].get("embedding")
+        
+        if article_embedding is None:
+            print(f"Skipping article {hit['_id']} due to missing embedding.")
+            print(f"Embedding: {article_embedding}")
+            distance = None
+
+        try:
+            distance = float(np.linalg.norm(np.array(query_embedding) - np.array(article_embedding)))
+        except Exception as e:
+            print(f"Error computing distance: {e}")
+            distance = None
+
         results.append({
             "ID": hit["_source"].get("ID"),
             "title": hit["_source"].get("title"),
             "url": hit["_source"].get("guid"),
             "date": hit["_source"].get("post_date"),
-            "score": hit["_score"]
+            "score": hit["_score"],
+            "actual_distance": distance
         })
 
     if not results:
