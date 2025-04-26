@@ -1,15 +1,7 @@
-import re
-import json
-from sentence_transformers import SentenceTransformer
+
 from opensearchpy import OpenSearch
-from datetime import datetime
 from config.settings import Config
 
-
-# Load embedding model
-print("loading model")
-model_name = "paraphrase-multilingual-MiniLM-L12-v2"
-model = SentenceTransformer(model_name)
 
 def get_client():
     """Establish OpenSearch connection securely using environment variables."""

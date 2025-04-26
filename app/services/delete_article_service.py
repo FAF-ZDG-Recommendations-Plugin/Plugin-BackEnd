@@ -1,15 +1,5 @@
-import re
-import json
-from sentence_transformers import SentenceTransformer
 from opensearchpy import OpenSearch
-from datetime import datetime
 from config.settings import Config
-
-
-# Load embedding model
-print("loading model")
-model_name = "paraphrase-multilingual-MiniLM-L12-v2"
-model = SentenceTransformer(model_name)
 
 def get_client():
     """Establish OpenSearch connection securely using environment variables."""
@@ -53,7 +43,7 @@ def delete_article(data):
 
     try:
         # Search for the article(s) to delete
-        response = client.search(index="articles", body=search_query)
+        response = client.search(index=Config.INDEX_NAME, body=search_query)
         hits = response.get("hits", {}).get("hits", [])
         if not hits:
             return {"message": "No matching article found."}, 404
@@ -61,7 +51,7 @@ def delete_article(data):
         deleted_ids = []
         for hit in hits:
             article_id = hit["_id"]
-            client.delete(index="articles", id=article_id)
+            client.delete(Config.INDEX_NAME, id=article_id)
             deleted_ids.append(article_id)
 
         return {"message": f"Deleted {len(deleted_ids)} article(s).", "deleted_ids": deleted_ids}, 200

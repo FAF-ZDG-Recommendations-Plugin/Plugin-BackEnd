@@ -42,7 +42,7 @@ def recommend_articles(data):
 
     # Start building query
     query_body = {
-        "size": 10000,
+        "size": 1000,
         "query": {
             "bool": {
                 "must": [],

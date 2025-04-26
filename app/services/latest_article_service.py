@@ -1,15 +1,7 @@
 import re
-import json
-from sentence_transformers import SentenceTransformer
 from opensearchpy import OpenSearch
 from datetime import datetime
 from config.settings import Config
-
-
-# Load embedding model
-print("loading model")
-model_name = "paraphrase-multilingual-MiniLM-L12-v2"
-model = SentenceTransformer(model_name)
 
 def get_client():
     """Establish OpenSearch connection securely using environment variables."""
@@ -29,7 +21,7 @@ def get_latest_article():
     """
     try:
         response = client.search(
-            index="articles",
+            index=Config.INDEX_NAME,
             body={
                 "size": 1,
                 "sort": [{"post_date": {"order": "desc"}}],
@@ -41,10 +33,11 @@ def get_latest_article():
         if not hits:
             return {"message": "No articles found."}, 404
 
-        article = hits[0]["_source"]
-        article["_id"] = hits[0]["_id"]
-        article["post_date"] = datetime.strptime(article["post_date"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d %H:%M:%S")
-        article["title"] = re.sub(r'<[^>]+>', '', article["title"])  # Remove HTML tags from title
+        article = {}
+        article["ID"] = hits[0]["_source"].get("ID")
+        article["title"] = hits[0]["_source"].get("title")
+        article["url"] = hits[0]["_source"].get("guid")
+        article["date"] = hits[0]["_source"].get("post_date")
 
 
 
