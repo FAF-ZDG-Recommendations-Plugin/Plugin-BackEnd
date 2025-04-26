@@ -2,6 +2,9 @@ from flask import Flask
 from config.settings import Config
 from app.routes.recommend_routes import recommend_bp
 from app.routes.index_routes import index_bp
+from app.routes.delete_article_routes import delete_bp
+from app.routes.latest_article_routes import latest_bp
+from app.routes.count_articles_route import count_bp
 from flask_cors import CORS
 
 def create_app():
@@ -12,6 +15,9 @@ def create_app():
     # Register Blueprints
     app.register_blueprint(recommend_bp, url_prefix='/api')
     app.register_blueprint(index_bp, url_prefix='/api')
+    app.register_blueprint(delete_bp, url_prefix='/api')
+    app.register_blueprint(latest_bp, url_prefix='/api')
+    app.register_blueprint(count_bp, url_prefix='/api')
 
     return app
 

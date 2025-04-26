@@ -8,7 +8,7 @@ from config.settings import Config
 
 # Load embedding model
 print("loading model")
-model_name = "all-MiniLM-L6-v2"
+model_name = "paraphrase-multilingual-MiniLM-L12-v2"
 model = SentenceTransformer(model_name)
 
 def get_client():
@@ -24,7 +24,7 @@ def get_client():
 client = get_client()
 
 # Define embedding dimension
-EMBEDDING_DIM = model.encode(["Sample sentence"])[0].shape[0]
+EMBEDDING_DIM = model.encode(["propoziție exemplu"])[0].shape[0]
 
 # Define OpenSearch index mapping
 index_body = {
@@ -40,6 +40,7 @@ index_body = {
                 "type": "date",
                 "format": "strict_date_optional_time||yyyy-MM-dd HH:mm:ss"
             },
+            "content": {"type": "text"},  # NEW: Store full article text
             "embedding": {
                 "type": "knn_vector",
                 "dimension": EMBEDDING_DIM,
@@ -69,8 +70,6 @@ def post_already_indexed(post_id):
     """Check if a post with the given ID is already in OpenSearch."""
     return client.exists(index=Config.INDEX_NAME, id=post_id)
 
-    
-
 
 def index_article(post):
     # Ensure required fields exist
@@ -83,12 +82,15 @@ def index_article(post):
     except ValueError:
         return {"error": "Invalid date format, expected 'YYYY-MM-DD HH:MM:SS'"}
     
+    #clean_text = normalize_diacritics(post["content"])
+    
     post_to_index = {
         "ID": post["id"],
         "title": post["title"],
         "guid": post["guid"],
         "post_date": post["post_date"],
-        "embedding": model.encode(post["content"]).tolist()
+        "embedding": model.encode(post["content"]).tolist(),
+        "content":post["content"]
     }
 
 

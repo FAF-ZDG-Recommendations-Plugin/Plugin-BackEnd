@@ -6,7 +6,7 @@ from config.settings import Config
 import numpy as np
 
 print("Loading model...")
-model_name = "all-MiniLM-L6-v2"
+model_name = "paraphrase-multilingual-MiniLM-L12-v2"
 model = SentenceTransformer(model_name)
 
 def get_client():
@@ -25,17 +25,7 @@ client = get_client()
 EMBEDDING_DIM = model.encode(["Sample sentence"])[0].shape[0]
 
 
-def normalize_diacritics(text):
-    """Normalize Romanian diacritics in the text."""
-    replacements = {
-        "ă": "a", "â": "a", "î": "i", "ș": "s", "ț": "t","ţ": "t","ş": "s",
-        "Ă": "A", "Â": "A", "Î": "I", "Ș": "S", "Ț": "T","Ţ": "T","Ş": "S",
-        "ắ": "a", "ấ": "a", "î́": "i", "ș́": "s", "ț́": "t","ţ́": "t","ş́": "s",
-        "Ắ": "A", "Ấ": "A", "Î́": "I", "Ș́": "S", "Ț́": "T","Ţ́": "T","Ş́": "S"
-    }
-    for diacritic in replacements:
-        text = text.replace(diacritic, replacements[diacritic])
-    return text
+
 
 def recommend_articles(data):
     """Find similar articles with optional keyword filtering and date range filtering."""
@@ -48,11 +38,11 @@ def recommend_articles(data):
         return {"error": "Missing or invalid 'top_k' parameter"}, 400
 
     # Generate embedding for query
-    query_embedding = model.encode([normalize_diacritics(data["query_text"])])[0].tolist()
+    query_embedding = model.encode([data["query_text"]])[0].tolist()
 
     # Start building query
     query_body = {
-        "size": data["top_k"]*10,
+        "size": 10000,
         "query": {
             "bool": {
                 "must": [],
@@ -65,14 +55,14 @@ def recommend_articles(data):
 
     # If mandatory keywords are provided, filter articles containing all keywords
     if "mandatory_kw" in data and isinstance(data["mandatory_kw"], list) and data["mandatory_kw"]:
-        keyword_conditions = [{"match": {"content": normalize_diacritics(keyword)}} for keyword in data["mandatory_kw"]]
+        keyword_conditions = [{"match": {"content": keyword}} for keyword in data["mandatory_kw"]]
         query_body["query"]["bool"]["must"].extend(keyword_conditions)  # Ensures all must match
     
 
     
     # If optional keywords are provided, they should boost results but not remove them
     if "optional_kw" in data and isinstance(data["optional_kw"], list) and data["optional_kw"]:
-        keyword_conditions = [{"match": {"content": {"query": normalize_diacritics(keyword), "fuzziness": "AUTO"}}} for keyword in data["optional_kw"]]
+        keyword_conditions = [{"match": {"content": {"query": keyword, "fuzziness": "AUTO"}}} for keyword in data["optional_kw"]]
         query_body["query"]["bool"]["should"].extend(keyword_conditions)
 
     # Add a date range filter if specified
