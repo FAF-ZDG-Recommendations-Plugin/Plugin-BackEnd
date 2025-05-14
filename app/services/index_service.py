@@ -74,13 +74,35 @@ def post_already_indexed(post_id):
 def index_article(post):
     # Ensure required fields exist
     if "id" not in post or "content" not in post or "post_date" not in post:
-        return {"error": "Missing required fields: id, content, post_date"}
+        return {"error": "Missing required fields: id, content, post_date"}, 400
+    
+    if "title" not in post:
+        return {"error": "Missing required fields: title"}, 400
+    
+    if post["title"] == "":
+        return {"error": "Title cannot be empty"}, 400
+    
+
+    if "guid" not in post:
+        return {"error": "Missing required fields: guid"}, 400
+    
+    if post["guid"] == "":
+        return {"error": "URL cannot be empty"}, 400
+    
+
+    if "content" not in post:
+        return {"error": "Missing required fields: content"}, 400
+    
+    if post["content"] == "":
+        return {"error": "Content cannot be empty"}, 400
+    
+
 
     # Convert post_date to ISO 8601 format
     try:
         post["post_date"] = datetime.strptime(post["post_date"], "%Y-%m-%d %H:%M:%S").isoformat()
     except ValueError:
-        return {"error": "Invalid date format, expected 'YYYY-MM-DD HH:MM:SS'"}
+        return {"error": "Invalid date format, expected 'YYYY-MM-DD HH:MM:SS'"}, 400
     
     #clean_text = normalize_diacritics(post["content"])
     
@@ -96,7 +118,7 @@ def index_article(post):
 
     # Check if the post is already indexed
     if post_already_indexed(post["id"]) and post["update"] == "false":
-        return {"message": "Post already indexed"}
+        return {"message": "Post already indexed"}, 200
 
     elif post["update"] == "true":
         # Step 1: Delete existing document
@@ -109,10 +131,10 @@ def index_article(post):
         # Step 3: Re-index the post
         res = client.index(index=Config.INDEX_NAME, id=post["id"], body=post_to_index, refresh=True)
         
-        return {"message": "Post re-indexed successfully", "opensearch_response": res}
+        return {"message": "Post re-indexed successfully", "opensearch_response": res}, 200
 
 
     # Index into OpenSearch
     res = client.index(index=Config.INDEX_NAME, id=post["id"], body=post_to_index, refresh=True)
 
-    return {"message": "Post indexed successfully", "opensearch_response": res}
+    return {"message": "Post indexed successfully", "opensearch_response": res}, 200
