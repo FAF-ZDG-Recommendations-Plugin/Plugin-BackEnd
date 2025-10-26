@@ -39,9 +39,36 @@ def get_latest_article():
         article["url"] = hits[0]["_source"].get("guid")
         article["date"] = hits[0]["_source"].get("post_date")
 
-
-
         return {"latest_article": article}, 200
+
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+def get_oldest_article():
+    """
+    Retrieves the oldest article from the 'articles' index based on post_date.
+    """
+    try:
+        response = client.search(
+            index=Config.INDEX_NAME,
+            body={
+                "size": 1,
+                "sort": [{"post_date": {"order": "asc"}}],
+                "_source": ["ID", "title", "guid", "post_date"]
+            }
+        )
+
+        hits = response.get("hits", {}).get("hits", [])
+        if not hits:
+            return {"message": "No articles found."}, 404
+
+        article = {}
+        article["ID"] = hits[0]["_source"].get("ID")
+        article["title"] = hits[0]["_source"].get("title")
+        article["url"] = hits[0]["_source"].get("guid")
+        article["date"] = hits[0]["_source"].get("post_date")
+
+        return {"oldest_article": article}, 200
 
     except Exception as e:
         return {"error": str(e)}, 500
