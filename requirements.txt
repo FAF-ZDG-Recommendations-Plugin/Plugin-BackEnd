@@ -1,0 +1,15 @@
+flask
+flask-cors
+flask-dotenv
+opensearch-py
+tenacity
+pybreaker
+pytest
+flasgger
+dotenv
+flask-cors
+numpy
+transformers==4.50.3
+sentence-transformers==4.0.1
+
+
