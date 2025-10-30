@@ -20,4 +20,4 @@ def count_articles():
     global client  # Use the existing OpenSearch client
     
     response = client.count(index=Config.INDEX_NAME)
-    return response["count"]
+    return {"count": response["count"]}, 200
